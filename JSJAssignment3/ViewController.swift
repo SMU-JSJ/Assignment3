@@ -18,28 +18,49 @@ class ViewController: UIViewController {
     @IBOutlet weak var goalLabel: UILabel!
     @IBOutlet weak var playGameButton: UIBarButtonItem!
     @IBOutlet weak var goalStepper: UIStepper!
+    @IBOutlet weak var progress: UIView!
+    @IBOutlet weak var progressHeight: NSLayoutConstraint!
     
     let activityManager = CMMotionActivityManager()
     let pedometer = CMPedometer()
+    let standardUserDefaults = NSUserDefaults.standardUserDefaults()
     
     var goal: Int = 0 {
         didSet {
-            self.goalLabel.text = "Goal: \(self.goal) steps"
+            self.progressValue = CGFloat(self.todaySteps) / CGFloat(self.goal)
+            self.goalLabel.text = "\(self.goal) steps"
             self.updateUntilGoalLabel()
             self.goalStepper.value = Double(self.goal)
+            
+            self.standardUserDefaults.setInteger(self.goal, forKey: "goal")
+            self.standardUserDefaults.synchronize()
         }
     }
-    var todaySteps: Int = 0
+    
+    var todaySteps: Int = 0 {
+        didSet {
+            self.progressValue = CGFloat(self.todaySteps) / CGFloat(self.goal)
+        }
+    }
+    
     var startOfToday: NSDate? = nil
     var startOfYesterday: NSDate? = nil
     var now: NSDate? = nil
+    var progressValue: CGFloat = 0.0 {
+        willSet {
+            self.view.removeConstraint(self.progressHeight)
+            self.progressHeight = NSLayoutConstraint(
+                item: self.progress, attribute: .Height, relatedBy: .Equal, toItem: self.view, attribute: .Height, multiplier: newValue, constant: 0
+            )
+            self.view.addConstraint(self.progressHeight)
+        }
+    }
     
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do any additional setup after loading the view, typically from a nib.
         
-        let standardUserDefaults = NSUserDefaults.standardUserDefaults()
-        self.goal = standardUserDefaults.integerForKey("goal") ?? 10
+        self.goal = self.standardUserDefaults.integerForKey("goal") ?? 10
         
         updateTimeValues()
         
@@ -77,7 +98,7 @@ class ViewController: UIViewController {
     }
     
     override func viewWillAppear(animated: Bool) {
-        super.viewWillAppear(animated);
+        super.viewWillAppear(animated)
         
         updateTimeValues()
         
@@ -100,10 +121,6 @@ class ViewController: UIViewController {
             self.pedometer.stopPedometerUpdates()
         }
         
-        let standardUserDefaults = NSUserDefaults.standardUserDefaults()
-        standardUserDefaults.setInteger(self.goal, forKey: "goal")
-        standardUserDefaults.synchronize()
-        
         super.viewWillDisappear(animated)
     }
 
@@ -122,10 +139,10 @@ class ViewController: UIViewController {
     func updateUntilGoalLabel() {
         var goalDiff = self.goal - Int(self.todaySteps)
         if (goalDiff > 0) {
-            self.untilGoalLabel.text = "\(goalDiff) steps"
+            self.untilGoalLabel.text = "\(goalDiff) steps until goal"
             self.playGameButton.enabled = false
         } else {
-            self.untilGoalLabel.text = "Goal Reached!"
+            self.untilGoalLabel.text = "Goal reached!"
             self.playGameButton.enabled = true
         }
     }
