@@ -10,27 +10,38 @@ import UIKit
 import SceneKit
 import CoreMotion
 
+// Set constants
 struct Constants {
     static let BasketHeight: CGFloat = 5.0
-    static let BasketRadius: CGFloat = 4.0
     static let BasketThickness: CGFloat = 0.5
     static let BasketYPosition: Float = -16.0
     static let AppleDropHeight: Float = 17.0
 }
 
 class GameViewController: UIViewController {
-    
+    // Initialize variables
     var scene: SCNScene!
     var cameraNode: SCNNode!
     var cameraOrbit: SCNNode!
     var motionManager: CMMotionManager!
     var timer: NSTimer?
     var dropInterval = 5.0
+    var goal = 10
+    var basketRadius: CGFloat = 2.0
     
-    
+    let standardUserDefaults = NSUserDefaults.standardUserDefaults()
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        
+        // Get goal for user defaults and update basket radius
+        self.goal = self.standardUserDefaults.integerForKey("goal") ?? 10
+        self.basketRadius = 2.0 + CGFloat(self.goal/500);
+        
+        // Don't let the basket's radius surpass 8
+        if(self.basketRadius > 8.0) {
+            self.basketRadius = 8.0;
+        }
         
         // Setup environment
         setupWorld()
@@ -65,9 +76,15 @@ class GameViewController: UIViewController {
         self.timer?.invalidate()
     }
     
+    // Create a timer to periodically call addApple()
     func createDropTimer() {
         self.timer?.invalidate()
-        self.timer = NSTimer.scheduledTimerWithTimeInterval(self.dropInterval, target: self, selector: Selector("addApple"), userInfo: nil, repeats: true)
+        
+        self.timer = NSTimer.scheduledTimerWithTimeInterval(self.dropInterval,
+            target: self,
+            selector: Selector("addApple"),
+            userInfo: nil,
+            repeats: true)
     }
     
     func setupWorld() {
@@ -93,21 +110,23 @@ class GameViewController: UIViewController {
         cameraOrbit.eulerAngles.x -= Float(M_PI_4/10)
         
         // Add a tube for the walls of the basket
-        let wall = SCNTube(innerRadius: Constants.BasketRadius - Constants.BasketThickness, outerRadius: Constants.BasketRadius, height: Constants.BasketHeight)
+        let wall = SCNTube(innerRadius: self.basketRadius - Constants.BasketThickness, outerRadius: self.basketRadius, height: Constants.BasketHeight)
         wall.firstMaterial?.diffuse.contents = UIImage(named: "basket_texture")
         
+        // Make the tube concave so that apples can pass through it
         let wallShape = SCNPhysicsShape(geometry: wall, options: [SCNPhysicsShapeTypeKey: SCNPhysicsShapeTypeConcavePolyhedron])
-        // add the plane to the world as a static body (no dynamic physics)
+        
+        // Add the tube to the world as a static body (no dynamic physics)
         let wallNode = SCNNode()
         wallNode.geometry = wall
         wallNode.physicsBody = SCNPhysicsBody(type: .Static, shape: wallShape)
         wallNode.position = SCNVector3(x: 0.0, y: Constants.BasketYPosition, z: -5)
         
         // Add a cylinder for the bottom of the basket
-        let bottom = SCNCylinder(radius: Constants.BasketRadius, height: Constants.BasketThickness)
+        let bottom = SCNCylinder(radius: self.basketRadius, height: Constants.BasketThickness)
         bottom.firstMaterial?.diffuse.contents = UIImage(named: "basket_texture")
         
-        // add the plane to the world as a static body (no dynamic physics)
+        // Add the cylinder to the world as a static body (no dynamic physics)
         let bottomNode = SCNNode()
         bottomNode.geometry = bottom
         bottomNode.physicsBody = SCNPhysicsBody.staticBody()
@@ -125,15 +144,19 @@ class GameViewController: UIViewController {
         self.addApple()
     }
     
+    // Create and drop apples
     func addApple() {
-        
+        // If more than 60 apples have been dropped, reset the game
         if (scene.rootNode.childNodes.count > 63) {
+            // Delete all apples
             for (var i = 62; i >= 3; i--) {
                 let node = scene.rootNode.childNodes[i] as? SCNNode
                 if (node != nil) {
                     node?.removeFromParentNode()
                 }
             }
+            
+            // Reset interval at which to drop apples
             self.dropInterval = 5.0
             createDropTimer()
         }
@@ -155,17 +178,14 @@ class GameViewController: UIViewController {
         
         scene.rootNode.addChildNode(ball)
         
+        // Decrement the interval at which apples will be dropped
         if (self.dropInterval > 0.5) {
             self.dropInterval -= 0.1
             createDropTimer()
         }
-        
-        //println(scene.rootNode.childNodes)
-        //var node = scene.rootNode.childNodes[3] as SCNNode
-        //println(node.worldTransform)
-        
     }
     
+    // Genereate a random number between a minimum value and a maximum value
     func randomNumberBetween(min: Float, max: Float) -> Float {
         return Float(arc4random()) / Float(UINT32_MAX) * (max - min) + min
     }
