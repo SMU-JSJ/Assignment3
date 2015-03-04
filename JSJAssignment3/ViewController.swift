@@ -76,6 +76,10 @@ class ViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do any additional setup after loading the view, typically from a nib.
+    }
+    
+    override func viewWillAppear(animated: Bool) {
+        super.viewWillAppear(animated)
         
         // Retrieve value for goal from user defaults
         self.goal = self.standardUserDefaults.integerForKey("goal") ?? 10
@@ -118,12 +122,6 @@ class ViewController: UIViewController {
                     }
             }
         }
-    }
-    
-    override func viewWillAppear(animated: Bool) {
-        super.viewWillAppear(animated)
-        
-        updateTimeValues()
         
         // If pedometer is available, get steps taken yesterday
         if CMPedometer.isStepCountingAvailable() {
