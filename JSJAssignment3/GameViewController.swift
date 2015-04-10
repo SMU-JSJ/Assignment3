@@ -136,7 +136,7 @@ class GameViewController: UIViewController {
         scene.rootNode.addChildNode(bottomNode)
         
         // Setup view
-        let view = self.view as SCNView
+        let view = self.view as! SCNView
         view.scene = scene
         view.autoenablesDefaultLighting = true
         

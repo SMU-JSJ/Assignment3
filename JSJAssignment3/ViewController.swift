@@ -30,7 +30,7 @@ class ViewController: UIViewController {
     var startOfYesterday: NSDate? = nil
     var now: NSDate? = nil
     
-    var goal: Int = 0 {
+    var goal: Int = 10 {
         // Whenever goal is set:
         //   Update progress bar (percent of green on screen)
         //   Updates the label stating steps left until goal is reached
@@ -59,17 +59,19 @@ class ViewController: UIViewController {
         // Whenever the progressValue is going to be set:
         //   Change the UI for the progress bar (percent of green on screen)
         willSet {
-            self.view.removeConstraint(self.progressHeight)
-            self.progressHeight = NSLayoutConstraint(
-                item: self.progress,
-                attribute: .Height,
-                relatedBy: .Equal,
-                toItem: self.view,
-                attribute: .Height,
-                multiplier: newValue,
-                constant: 0
-            )
-            self.view.addConstraint(self.progressHeight)
+            if (newValue >= 0) {
+                self.view.removeConstraint(self.progressHeight)
+                self.progressHeight = NSLayoutConstraint(
+                    item: self.progress,
+                    attribute: .Height,
+                    relatedBy: .Equal,
+                    toItem: self.view,
+                    attribute: .Height,
+                    multiplier: newValue,
+                    constant: 0
+                )
+                self.view.addConstraint(self.progressHeight)
+            }
         }
     }
     
@@ -114,6 +116,7 @@ class ViewController: UIViewController {
             pedometer.startPedometerUpdatesFromDate(self.startOfToday)
                 { (pedData: CMPedometerData!, error:NSError!) -> Void in
                     self.todaySteps = Int(pedData.numberOfSteps)
+                    println(self.todaySteps)
                     
                     // Update label with today's steps and update steps until goal reached
                     dispatch_async(dispatch_get_main_queue()) {
