@@ -50,19 +50,23 @@ class GameViewController: UIViewController {
         motionManager = CMMotionManager()
         motionManager.deviceMotionUpdateInterval = 0.1
         
-        motionManager.startDeviceMotionUpdatesToQueue(NSOperationQueue.currentQueue())
-            {
-                (deviceMotion, error) -> Void in
-                
-                let accel = deviceMotion.gravity
-                let userAccel = deviceMotion.userAcceleration
-                
-                let accelX = Float(9.8 * accel.x + userAccel.x*9.8)
-                let accelY = Float(9.8 * accel.y + userAccel.y*9.8)
-                let accelZ = Float(9.8 * accel.z + userAccel.z*9.8)
-                
-                self.scene.physicsWorld.gravity = SCNVector3(x: accelX, y: accelY, z: accelZ)
-                
+        if let queue = NSOperationQueue.currentQueue() {
+            motionManager.startDeviceMotionUpdatesToQueue(queue)
+                {
+                    (deviceMotion, error) -> Void in
+                    
+                    if deviceMotion != nil && error == nil {
+                        let accel = deviceMotion!.gravity
+                        let userAccel = deviceMotion!.userAcceleration
+                        
+                        let accelX = Float(9.8 * accel.x + userAccel.x*9.8)
+                        let accelY = Float(9.8 * accel.y + userAccel.y*9.8)
+                        let accelZ = Float(9.8 * accel.z + userAccel.z*9.8)
+                        
+                        self.scene.physicsWorld.gravity = SCNVector3(x: accelX, y: accelY, z: accelZ)
+                    }
+                    
+            }
         }
     }
     
@@ -150,10 +154,8 @@ class GameViewController: UIViewController {
         if (scene.rootNode.childNodes.count > 63) {
             // Delete all apples
             for (var i = 62; i >= 3; i--) {
-                let node = scene.rootNode.childNodes[i] as? SCNNode
-                if (node != nil) {
-                    node?.removeFromParentNode()
-                }
+                let node = scene.rootNode.childNodes[i] as SCNNode
+                node.removeFromParentNode()
             }
             
             // Reset interval at which to drop apples
